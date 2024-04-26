@@ -10,8 +10,8 @@
 6. Run `help` for a list of commands
 
 ## Features
-> - Secure AES CBC password encryption ensuring no one can read your usernames, emails or passwords
-> - Secure SHA256 hashing so no one but you can access your database
+* Secure AES CBC password encryption ensuring no one can read your usernames, emails or passwords
+* Secure SHA256 hashing so no one but you can access your database
 
 ## Todo
 
