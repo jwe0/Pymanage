@@ -12,6 +12,10 @@
 ## Features
 * Secure AES CBC password encryption ensuring no one can read your usernames, emails or passwords
 * Secure SHA256 hashing so no one but you can access your database
+<<<<<<< HEAD
+=======
+* Easy user setup
+>>>>>>> 7920fae2b043a919d197dbd57951c19e64420fe1
 
 ## Todo
 
