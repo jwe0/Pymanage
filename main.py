@@ -1,7 +1,11 @@
-import sqlite3, hashlib, json, base64, os
+import sqlite3, hashlib, json, base64, os, threading, logging
+from flask import Flask, jsonify, request, render_template
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
+logging.basicConfig(level=logging.ERROR)
 
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
 
 
 class General:
@@ -31,7 +35,8 @@ To remove this greeting set 'Greeting' in the config to false
             data = {
                 "General" : {
                     "Greeting" : True,
-                    "Clear Screen" : True
+                    "Clear Screen" : True,
+                    "Web UI" : False
                 },
                 "Credentials" : {}
             }
@@ -55,10 +60,34 @@ To remove this greeting set 'Greeting' in the config to false
 
             greeting = cnfg['General']['Greeting']
             clear_s = cnfg['General']['Clear Screen']
+            webui = cnfg['General']['Web UI']
             cnfguser = cnfg['Credentials']['Username']
             cnfgpass = cnfg['Credentials']['Password']
 
-            return cnfguser, cnfgpass, greeting, clear_s
+            return cnfguser, cnfgpass, greeting, clear_s, webui
+
+class Webui:
+    def __init__(self, masterpassword) -> None:
+        self.app = Flask(__name__)
+        self.password = masterpassword
+
+        @self.app.route("/", methods=['GET'])
+        def index():
+            return render_template('index.html')
+        
+        @self.app.route("/passwords", methods=['POST'])
+        def passwords():
+            database = Database(self.password)  # Create a new instance of Database
+            passwords = database.Webui_Read_Databse()
+            return jsonify({"passwords": passwords})
+
+    def Start_Server(self):
+        self.app.run(debug=False)
+
+
+
+
+
 
 
 class Database:
@@ -101,13 +130,23 @@ class Database:
         self.con.commit()
 
 
+    def Webui_Read_Databse(self):
+        items = []
+        entries = self.cursor.execute("SELECT * FROM passwords")
+        entrys = entries.fetchall()
+
+        for entry in entrys:
+            items.append(((entry[0]), self.Decrypt_data(entry[1]), self.Decrypt_data(entry[2]), self.Decrypt_data(entry[3])))
+        return items
+                         
+
 
     def Read_Databse(self):
         items = self.cursor.execute("SELECT * FROM passwords")
         entrys = items.fetchall()
         for entry in entrys:
             print(f"""
-Site: {self.Decrypt_data(entry[0])}
+Site: {entry[0]}
 Username: {self.Decrypt_data(entry[1])}
 Email: {self.Decrypt_data(entry[2])}
 Password: {self.Decrypt_data(entry[3])}
@@ -123,11 +162,12 @@ Password: {self.Decrypt_data(entry[3])}
 
     def Search_Database(self, site):
         items = self.cursor.execute(f"SELECT * FROM passwords WHERE url = '{site}'")
-        
-        entry = items.fetchone()
-        if entry:
-            print(f"""
-Site: {self.Decrypt_data(entry[0])}
+
+        entries = items.fetchall()
+        if entries:
+            for entry in entries:
+                print(f"""
+Site: {entry[0]}
 Username: {self.Decrypt_data(entry[1])}
 Email: {self.Decrypt_data(entry[2])}
 Password: {self.Decrypt_data(entry[3])}
@@ -151,6 +191,7 @@ RD -> Show database
 SF -> Search for a specific site
 AD -> Add a new record
 CD -> Clear the entries
+EX -> Exit the program
 """)
 
     def Main(self):
@@ -183,23 +224,30 @@ CD -> Clear the entries
                         pass
             case "HELP":
                 self.Help()
+            case "EX":
+                exit()
 
 
 
 if __name__ == "__main__":
     General.Set_Title()
     General.Check_Files()
-    cnfguser, cnfgpass, greeting, clear_s = General.Load_Config()
+    cnfguser, cnfgpass, greeting, clear_s, webui = General.Load_Config()
+
 
     password = input("Master password: ")
     username = input("Username: ")
 
     if hashlib.sha256(password.encode()).hexdigest() == cnfgpass and hashlib.sha256(username.encode()).hexdigest() == cnfguser:
+        if webui:
+            webgui = Webui(password)
+            web_thread = threading.Thread(target=webgui.Start_Server)
+            web_thread.start()
         if clear_s:
             General.Clear_Screen()
         if greeting:
             General.Greeting()
         while True:
             Main(password).Main()
-    else:
+    else:   
         print("Incorrect password")

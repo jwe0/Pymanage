@@ -1,0 +1,10 @@
+body {
+    background-color: black;
+    color: white;
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
