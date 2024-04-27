@@ -1,5 +1,5 @@
 function fetch_passwords() {
-    var out = document.getElementById("list-out").innerHTML = ""
+    var out = document.getElementById("passwordList").innerHTML = ""
     out.innerHTML = ""
     fetch('/passwords', {
         method: 'POST',
@@ -39,7 +39,7 @@ function fetch_passwords() {
 
             limain.appendChild(ulnested)
 
-            document.getElementById("list-out").appendChild(limain)
+            document.getElementById("passwordList").appendChild(limain)
         })
     })
 }

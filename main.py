@@ -1,4 +1,4 @@
-import sqlite3, hashlib, json, base64, os, threading, logging
+import sqlite3, hashlib, json, base64, os, threading, logging, webbrowser
 from flask import Flask, jsonify, request, render_template
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
@@ -83,6 +83,7 @@ class Webui:
 
     def Start_Server(self):
         self.app.run(debug=False)
+        webbrowser.open("http://127.0.0.1:5000")
 
 
 
