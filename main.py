@@ -1,5 +1,6 @@
 import sqlite3, hashlib, json, base64, os, threading, logging, webbrowser
 from flask import Flask, jsonify, request, render_template
+from flaskwebgui import FlaskUI
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 
@@ -62,14 +63,16 @@ To remove this greeting set 'Greeting' in the config to false
             greeting = cnfg['General']['Greeting']
             clear_s = cnfg['General']['Clear Screen']
             webui = cnfg['General']['Web UI']
+            deskui = cnfg['General']['Desktop UI']
             cnfguser = cnfg['Credentials']['Username']
             cnfgpass = cnfg['Credentials']['Password']
 
-            return cnfguser, cnfgpass, greeting, clear_s, webui
+            return cnfguser, cnfgpass, greeting, clear_s, webui, deskui
 
 class Webui:
     def __init__(self, masterpassword) -> None:
         self.app = Flask(__name__)
+        self.ui = FlaskUI(app=self.app, server="flask", height=500, width=900)
         self.password = masterpassword
 
         @self.app.route("/", methods=['GET'])
@@ -81,6 +84,9 @@ class Webui:
             database = Database(self.password)  # Create a new instance of Database
             passwords = database.Webui_Read_Databse()
             return jsonify({"passwords": passwords})
+        
+    def Start_UI(self):
+        self.ui.run()
 
     def Start_Server(self):
         self.app.run(debug=False)
@@ -284,7 +290,7 @@ EX -> Exit the program
 if __name__ == "__main__":
     General.Set_Title()
     General.Check_Files()
-    cnfguser, cnfgpass, greeting, clear_s, webui = General.Load_Config()
+    cnfguser, cnfgpass, greeting, clear_s, webui, deskui = General.Load_Config()
 
 
     password = input("Master password: ")
@@ -293,8 +299,10 @@ if __name__ == "__main__":
     if hashlib.sha256(password.encode()).hexdigest() == cnfgpass and hashlib.sha256(username.encode()).hexdigest() == cnfguser:
         if webui:
             webgui = Webui(password)
-            web_thread = threading.Thread(target=webgui.Start_Server)
-            web_thread.start()
+            web_thread = threading.Thread(target=webgui.Start_Server).start()
+            if deskui:
+                threading.Thread(target=webgui.Start_UI).start()
+
         if clear_s:
             General.Clear_Screen()
         if greeting:
