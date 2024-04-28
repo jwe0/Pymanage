@@ -2,8 +2,9 @@ import sqlite3, hashlib, json, base64, os, threading, logging, webbrowser
 from flask import Flask, jsonify, request, render_template
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
-logging.basicConfig(level=logging.ERROR)
 
+
+logging.basicConfig(level=logging.ERROR)
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
@@ -19,7 +20,7 @@ class General:
 
            
 
-Welcome to pymanage. Run help for a list of commnds.
+Welcome to pymanage. Run help for a list of commands.
 To remove this greeting set 'Greeting' in the config to false
 """)
     def Clear_Screen():
@@ -130,6 +131,34 @@ class Database:
         self.cursor.execute("CREATE TABLE passwords(url, username, email, password)")
         self.con.commit()
 
+    def Remove_Entry(self, entry):
+        self.cursor.execute(f"DELETE FROM passwords WHERE url = '{entry}'")
+        self.con.commit()
+
+    def Import_Database(self, type, file):
+        with open(file) as f:
+            database = json.load(f)
+
+            if type.lower() == "bitwarden":
+
+                entries = database['items']
+
+                total = len(entries)
+                progress = 0
+
+                for entry in entries:
+                    self.Add_Info(entry['name'], entry['login']['username'] if entry['login']['username'] else "No Username", "null", entry['login']['password'] if entry['login']['password'] else "No Password")
+                    progress += 1
+                    print(f"[{str(progress)}/{str(total)}]", end='\r')
+        print(f"Imported {file}")
+
+
+
+
+
+
+
+
 
     def Webui_Read_Databse(self):
         items = []
@@ -188,10 +217,12 @@ class Main:
         
     def Help(self):
         print("""
-RD -> Show database
+LD -> Show database
 SF -> Search for a specific site
+RF -> Remove a certain entry
 AD -> Add a new record
 CD -> Clear the entries
+ID -> Import a password manager file
 EX -> Exit the program
 """)
 
@@ -200,7 +231,7 @@ EX -> Exit the program
         selection = input("> ")
 
         match selection.upper():
-            case "RD":
+            case "LD":
                 self.database.Read_Databse()
             case "SF":
                 name = input("site > ")
@@ -223,6 +254,26 @@ EX -> Exit the program
                             self.database.Clear_Databse()
                     case "n":
                         pass
+
+            case "RF":
+                name = input("Url: ")
+                self.database.Remove_Entry(name)
+            case "ID":
+                managers = ['1']
+                print("Must be an unencrypted json export file.")
+                print("1. Bitwarden")
+                type = input("Manager: ")
+                while type not in managers:
+                    type = input("Manager: ")
+                file = input("File: ")
+                if not os.path.exists(file):
+                    print("File {} does not exist".format(file))
+                    return
+                if type == "1":
+                    type = "bitwarden"
+                self.database.Import_Database(type, file)
+
+
             case "HELP":
                 self.Help()
             case "EX":
