@@ -38,7 +38,8 @@ To remove this greeting set 'Greeting' in the config to false
                 "General" : {
                     "Greeting" : True,
                     "Clear Screen" : True,
-                    "Web UI" : False
+                    "Web UI" : False,
+                    "Desktop UI" : False
                 },
                 "Credentials" : {}
             }
